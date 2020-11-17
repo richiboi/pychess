@@ -100,8 +100,34 @@ class Pawn(Piece):
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
+    # TODO: implement en passant
+    # Can move two squares forward on its first turn
+    # Otherwise, can only move one. Cannot capture in front.
+    # Captures via diagonal up or down
     def get_possible_moves(self, piece_list):
-        return self.get_possible_moves_directional(piece_list, [(0, -1 if self.is_white else 1)])
+        moves = []
+        updown = -1 if self.is_white else 1  # Determines the direction based on color
+
+        # Check for diagonal captures
+        for piece in piece_list:
+            if piece.pos == pos_add(self.pos, (1, updown)) or piece.pos == pos_add(self.pos, (-1, updown)):
+                moves.append(Move(self, piece.pos, piece))  # Capture
+
+        sq_ahead_blocked = True
+
+        # Check if square ahead is blocked. Matters for all turns
+        # If not, add square ahead to possible moves
+        # Doesn't matter what color it is, as it can't capture ahead
+        if not pos_add(self.pos, (0, updown)) in [piece.pos for piece in piece_list]:
+            sq_ahead_blocked = False
+            moves.append(Move(self, pos_add(self.pos, (0, updown))))
+
+        # If first move, and the first square wasn't blocked, check the second square
+        if not sq_ahead_blocked and self.first_move:
+            if not pos_add(self.pos, (0, updown * 2)) in [piece.pos for piece in piece_list]:
+                moves.append(Move(self, pos_add(self.pos, (0, updown * 2))))
+
+        return moves
 
 
 class Rook(Piece):

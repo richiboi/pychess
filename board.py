@@ -43,6 +43,9 @@ class Board():
     # Function to perform a move. Updates the board's piecelist
     def perform_move(self, move):
 
+        # Set piece's first move to false
+        move.piece.first_move = False
+
         # If there is capture, perform it
         if move.capture:
             self.piece_list.remove(move.capture)

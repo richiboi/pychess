@@ -63,10 +63,13 @@ class GameManager():
                 if square_clicked == move.dest:
 
                     self.board.perform_move(move)
-                    # AI Perform a move
 
                     # Deselect
                     self.selected_piece = None
+
+                    # Change to black turn or AI perform move
+                    self.is_white_turn = not self.is_white_turn
+
                     return
 
         # If another piece is selected and of same color, set it as the new selected piece
