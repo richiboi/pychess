@@ -5,6 +5,7 @@ Doesn't handle AI Logic but will call the function for
 the AI to make a move given the board.
 """
 
+from ai import get_ai_move_by_board_value, get_minimax_move
 from pos_funcs import pos_divide_whole, pos_multiply,  pos_add
 from board import Board
 import pygame
@@ -68,7 +69,9 @@ class GameManager():
                     self.selected_piece = None
 
                     # Change to black turn or AI perform move
-                    self.is_white_turn = not self.is_white_turn
+                    ai_move = get_minimax_move(
+                        self.board, not self.is_white_turn)
+                    self.board.perform_move(ai_move)
 
                     return
 

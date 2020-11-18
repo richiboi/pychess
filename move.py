@@ -1,6 +1,6 @@
 """
 Contains implementation for a Move object
-The move object only acts as a struct to store properties for a move
+
 """
 
 

@@ -91,12 +91,14 @@ class Piece():
         return moves
 
     # Function to update the member variable moves list
+    # Will filter out if king is put into danger or not
     def update_moves(self, piece_list):
         self.moves = self.get_possible_moves(piece_list)
 
 
 class Pawn(Piece):
     def __init__(self, pos, type, is_white):
+        self.value = 1
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -110,7 +112,7 @@ class Pawn(Piece):
 
         # Check for diagonal captures
         for piece in piece_list:
-            if piece.pos == pos_add(self.pos, (1, updown)) or piece.pos == pos_add(self.pos, (-1, updown)):
+            if (piece.pos == pos_add(self.pos, (1, updown)) or piece.pos == pos_add(self.pos, (-1, updown))) and piece.is_white != self.is_white:
                 moves.append(Move(self, piece.pos, piece))  # Capture
 
         sq_ahead_blocked = True
@@ -132,6 +134,7 @@ class Pawn(Piece):
 
 class Rook(Piece):
     def __init__(self, pos, type, is_white):
+        self.value = 5
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -141,6 +144,7 @@ class Rook(Piece):
 
 class Knight(Piece):
     def __init__(self, pos, type, is_white):
+        self.value = 3
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -151,6 +155,7 @@ class Knight(Piece):
 
 class Bishop(Piece):
     def __init__(self, pos, type, is_white):
+        self.value = 3
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -160,6 +165,7 @@ class Bishop(Piece):
 
 class Queen(Piece):
     def __init__(self, pos, type, is_white):
+        self.value = 9
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -169,6 +175,7 @@ class Queen(Piece):
 
 class King(Piece):
     def __init__(self, pos, type, is_white):
+        self.value = 9000
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
