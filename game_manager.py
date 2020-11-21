@@ -80,6 +80,8 @@ class GameManager():
                     ai_move = get_negamax_move(
                         self.board, not self.is_white_turn)
                     end = time.time()
+                    print('----------------')
+                    print(ai_move)
                     print(f'Execution time: {end - start}')
                     self.board.perform_move(ai_move)
 

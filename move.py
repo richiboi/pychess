@@ -15,4 +15,4 @@ class Move():
         # Promotion - the new piece we want to promote it to
 
     def __repr__(self):
-        return f'Piece: {self.piece} \nDestination: {self.dest} \nCapture: {self.capture}'
+        return f'Piece: {self.piece}Destination: {self.dest} \nCapture: {self.capture}'
