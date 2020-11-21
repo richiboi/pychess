@@ -1,6 +1,7 @@
 """
 Contains implementation for a Piece object
 Each piece object has a position and a list of moves.
+Each piece also has a value
 """
 
 from pos_funcs import pos_add, is_in_bounds
@@ -11,7 +12,6 @@ class Piece():
     def __init__(self, pos, piece_type, is_white):
         self.pos = pos  # Tuple (x, y)
         self.is_white = is_white  # Bool
-        self.moves = []  # A list of move objects
         self.type = piece_type
         self.first_move = True
 
@@ -85,20 +85,21 @@ class Piece():
                         break
                     else:
                         moves.append(Move(self, sq, piece))
+                        break
             else:
                 moves.append(Move(self, sq))
 
         return moves
 
-    # Function to update the member variable moves list
-    # Will filter out if king is put into danger or not
-    def update_moves(self, piece_list):
-        self.moves = self.get_possible_moves(piece_list)
+    # Function to get back all the possible moves of this piece
+    # TODO: Need to implement king filtering
+    def get_moves(self, piece_list):
+        return self.get_possible_moves(piece_list)
 
 
 class Pawn(Piece):
     def __init__(self, pos, type, is_white):
-        self.value = 1
+        self.value = 100
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -134,7 +135,7 @@ class Pawn(Piece):
 
 class Rook(Piece):
     def __init__(self, pos, type, is_white):
-        self.value = 5
+        self.value = 500
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -144,7 +145,7 @@ class Rook(Piece):
 
 class Knight(Piece):
     def __init__(self, pos, type, is_white):
-        self.value = 3
+        self.value = 320
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -155,7 +156,7 @@ class Knight(Piece):
 
 class Bishop(Piece):
     def __init__(self, pos, type, is_white):
-        self.value = 3
+        self.value = 330
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
@@ -175,7 +176,7 @@ class Queen(Piece):
 
 class King(Piece):
     def __init__(self, pos, type, is_white):
-        self.value = 9000
+        self.value = 20000
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list

@@ -16,7 +16,6 @@ class Board():
 
         self.sq_size = sq_size
         self.setup_pieces(config_file)
-        self.update_piece_moves()
 
     # Performs the initial setup of pieces from a txt config file
     # Edits the piece_list member variable
@@ -53,9 +52,21 @@ class Board():
         # Move the piece in question
         move.piece.pos = move.dest
 
-        self.update_piece_moves()
+    # Returns the move list for all pieces
+    def get_moves(self):
+        moves = []
 
-    # Updates the moves list of all pieces
-    def update_piece_moves(self):
         for piece in self.piece_list:
-            piece.update_moves(self.piece_list)
+            moves += piece.get_moves(self.piece_list)
+
+        return moves
+
+    # Returns the move list for a given color
+    def get_moves_of_color(self, is_white):
+        moves = []
+
+        for piece in self.piece_list:
+            if piece.is_white == is_white:
+                moves += piece.get_moves(self.piece_list)
+
+        return moves

@@ -3,107 +3,56 @@ Centers around a singular ai_move() function
 that returns the given move that is most beneficial
 """
 
-MINIMAX_DEPTH = 2
+from piece_square_value import get_value_of_position
 
-"""
-Main recursive function that evaluates the best move.
-Returns a Move object that is the desired object to move
-
-"""
+MINIMAX_DEPTH = 3
 
 
-def get_minimax_move(board, is_white):
-    move, score = __minimax(board, is_white, MINIMAX_DEPTH, None)
+# Main recursive function that evaluates the best move.
+# Returns a Move object that is the desired object to move
+
+def get_negamax_move(board, is_white):
+    move = __negamax(board, is_white, MINIMAX_DEPTH, MINIMAX_DEPTH)
     return move
 
 
-# Returns a node represented by tuple (Move, score)
-def __minimax(board, is_white, depth, curr_move):
+# Root case will return a move
+# All other cases will return best score
+def __negamax(board, is_white, depth, start_depth):
     if depth == 0:
-        return curr_move, board_value(board, is_white)
+        return board_value(board, is_white)
 
     max_score = -9999
     best_move = None
-    for piece in board.piece_list:
-        if piece.is_white != is_white:
-            continue
 
-        for move in piece.moves:
-            # Keep track of original state
-            piece_original_pos = piece.pos
-            piece_original_first_move = piece.first_move
+    # Get all available moves from this point on
+    moves = board.get_moves_of_color(is_white)
 
-            # Perform move. Returns the index of the removed captured piece
-            index = ai_perform_move(move, board.piece_list)
+    for move in moves:
+        # Keep track of original state
+        piece_original_pos = move.piece.pos
+        piece_original_first_move = move.piece.first_move
 
-            board.update_piece_moves()
+        # Perform move.
+        board.perform_move(move)
 
-            # Evaluate
-            move_evaluated, score = __minimax(
-                board, not is_white, depth - 1, move)
-            if score > max_score:
-                max_score = score
-                best_move = move_evaluated
+        # Evaluate
+        score = -(__negamax(board, not is_white,
+                            initial_is_white, depth - 1, start_depth))
+        if score > max_score:
+            max_score = score
+            best_move = move
 
-            # Unperform move
-            piece.pos = piece_original_pos
-            piece.first_move = piece_original_first_move
-            if move.capture:
-                board.piece_list.insert(index, move.capture)
+        # Unperform move
+        move.piece.pos = piece_original_pos
+        move.piece.first_move = piece_original_first_move
+        if move.capture:
+            board.piece_list.append(move.capture)
 
-    return best_move, max_score
-
-
-# Testing function that returns a move based on the board value
-def get_ai_move_by_board_value(board, is_white):
-    optimum_move = None
-    best_score = -9999
-
-    for piece in board.piece_list:
-
-        if piece.is_white != is_white:
-            continue
-
-        for move in piece.moves:
-            # Keep track of original state
-            piece_original_pos = piece.pos
-            piece_original_first_move = piece.first_move
-
-            # Perform move. Returns the index of the removed captured piece
-            index = ai_perform_move(move, board.piece_list)
-
-            # Evaluate
-            board_score = board_value(board, is_white)
-            if board_score > best_score:
-                optimum_move = move
-                best_score = board_score
-
-            # Unperform move
-            piece.pos = piece_original_pos
-            piece.first_move = piece_original_first_move
-            if move.capture:
-                board.piece_list.insert(index, move.capture)
-
-    return optimum_move
-
-
-# Similar to board's perform move only the move list doesn't update
-# pieces moves list for efficiency
-# Returns the index in the piece_list of the removed captured piece
-# to be used for later insertion
-def ai_perform_move(move, piece_list):
-    # Set piece's first move to false
-    move.piece.first_move = False
-
-    # If there is capture, perform it
-    index = 0
-    if move.capture:
-        index = piece_list.index(move.capture)
-        piece_list.remove(move.capture)
-
-    # Move the piece in question
-    move.piece.pos = move.dest
-    return index
+    if depth == start_depth:
+        return best_move
+    else:
+        return max_score
 
 
 # Function to evaluate the value of a given board
@@ -112,6 +61,44 @@ def ai_perform_move(move, piece_list):
 def board_value(board, is_white):
     value = 0
     for piece in board.piece_list:
-        value += piece.value * (1 if piece.is_white == is_white else -1)
+        multiplier = 1 if piece.is_white == is_white else -1
+        value += piece.value * multiplier            # Add piece value
+        # Add position value
+        value += get_value_of_position(piece.pos, piece.type) * multiplier
 
     return value
+
+
+# Testing function that returns a move based on the board value
+def get_ai_move_by_board_value(board, is_white):
+    optimum_move = None
+    best_score = -9999
+
+    # Get all available moves from this point on
+    moves = board.get_moves_of_color(is_white)
+
+    for move in moves:
+        # Keep track of original state
+        piece_original_pos = piece.pos
+        piece_original_first_move = piece.first_move
+
+        if move.capture:
+            captured_piece = move.capture
+            captured_piece_index = board.piece_list.index(move.capture)
+
+        # Perform move.
+        board.perform_move(move)
+
+        # Evaluate
+        board_score = board_value(board, is_white)
+        if board_score > best_score:
+            optimum_move = move
+            best_score = board_score
+
+        # Unperform move
+        piece.pos = piece_original_pos
+        piece.first_move = piece_original_first_move
+        if move.capture:
+            board.piece_list.insert(index, move.capture)
+
+    return optimum_move

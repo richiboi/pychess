@@ -5,11 +5,12 @@ Doesn't handle AI Logic but will call the function for
 the AI to make a move given the board.
 """
 
-from ai import get_ai_move_by_board_value, get_minimax_move
+from ai import get_ai_move_by_board_value, get_negamax_move
 from pos_funcs import pos_divide_whole, pos_multiply,  pos_add
 from board import Board
 import pygame
 import os
+import time
 
 PIECE_SIZE = 1
 CIRCLE_SIZE = 0.2
@@ -23,6 +24,9 @@ class GameManager():
         self.is_white_turn = True
         self.board = Board(sq_size, starter_config_file)
 
+        # Current move list keeps track of moves of selected piece
+        self.selected_piece_moves = []
+
     # Main draw function for drawing pieces and move circles
     def draw(self):
         self.__draw_pieces()
@@ -33,7 +37,7 @@ class GameManager():
                                (255, 0, 0))
 
             # Draw the moves of the selected piece
-            for move in self.selected_piece.moves:
+            for move in self.selected_piece_moves:
                 self.__draw_circle(move.dest, (0, 0, 255))
 
     # Draws all the pieces onto the board
@@ -58,19 +62,25 @@ class GameManager():
     def handle_board_click(self, mouse_pos):
         square_clicked = pos_divide_whole(mouse_pos, self.sq_size)
 
-        # If a piece is selected, check if it clicks on one of the destination
+        # If a piece is selected, check if it clicks on one of the moves
         if self.selected_piece:
-            for move in self.selected_piece.moves:
+            for move in self.selected_piece_moves:
                 if square_clicked == move.dest:
 
                     self.board.perform_move(move)
 
                     # Deselect
-                    self.selected_piece = None
+                    self.select_piece(None)
 
                     # Change to black turn or AI perform move
-                    ai_move = get_minimax_move(
+                    # Also times the AI
+                    # self.is_white_turn = not self.is_white_turn
+
+                    start = time.time()
+                    ai_move = get_negamax_move(
                         self.board, not self.is_white_turn)
+                    end = time.time()
+                    print(f'Execution time: {end - start}')
                     self.board.perform_move(ai_move)
 
                     return
@@ -78,8 +88,17 @@ class GameManager():
         # If another piece is selected and of same color, set it as the new selected piece
         for piece in self.board.piece_list:
             if piece.pos == square_clicked and piece.is_white == self.is_white_turn:
-                self.selected_piece = piece
+                self.select_piece(piece)
                 return
 
         # Otherwise, just deselect
-        self.selected_piece = None
+        self.select_piece(None)
+
+    # Function to select piece. Also updates the selected_piece_moves
+    def select_piece(self, piece):
+        self.selected_piece = piece
+
+        if piece:
+            self.selected_piece_moves = piece.get_moves(self.board.piece_list)
+        else:
+            self.selected_piece_moves = []
