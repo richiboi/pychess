@@ -5,15 +5,15 @@ that returns the given move that is most beneficial
 
 from piece_square_value import get_value_of_position
 
-MINIMAX_DEPTH = 3
+MINIMAX_DEPTH = 4
 
 
 # Main recursive function that evaluates the best move.
 # Returns a Move object that is the desired object to move
 
-def get_negamax_move(board, is_white):
+def get_ai_move(board, is_white, depth):
     move = __negamax(board, -99999, 99999, is_white,
-                     MINIMAX_DEPTH, MINIMAX_DEPTH)
+                     depth, depth)
     return move
 
 
@@ -33,7 +33,7 @@ def __negamax(board, alpha, beta, is_white, depth, start_depth):
         # Keep track of original state
         move_state = MoveState(move)
 
-        # Perform move.
+        # Perform move
         board.perform_move(move)
 
         # Get score
@@ -51,10 +51,10 @@ def __negamax(board, alpha, beta, is_white, depth, start_depth):
         alpha = max(alpha, score)
 
         if alpha >= beta:
-            print('prune')
             break
 
     if depth == start_depth:
+        print(max_score)
         return best_move
     else:
         return max_score

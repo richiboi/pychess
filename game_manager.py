@@ -5,7 +5,7 @@ Doesn't handle AI Logic but will call the function for
 the AI to make a move given the board.
 """
 
-from ai import get_ai_move_by_board_value, get_negamax_move
+from ai import get_ai_move
 from pos_funcs import pos_divide_whole, pos_multiply,  pos_add
 from board import Board
 import pygame
@@ -77,8 +77,8 @@ class GameManager():
                     # self.is_white_turn = not self.is_white_turn
 
                     start = time.time()
-                    ai_move = get_negamax_move(
-                        self.board, not self.is_white_turn)
+                    ai_move = get_ai_move(
+                        self.board, not self.is_white_turn, 3)
                     end = time.time()
                     print('----------------')
                     print(ai_move)
@@ -86,6 +86,11 @@ class GameManager():
                     self.board.perform_move(ai_move)
 
                     return
+
+        # If piece is selected and click itself, deselect
+        if self.selected_piece and self.selected_piece.pos == square_clicked:
+            self.select_piece(None)
+            return
 
         # If another piece is selected and of same color, set it as the new selected piece
         for piece in self.board.piece_list:

@@ -70,3 +70,14 @@ class Board():
                 moves += piece.get_moves(self.piece_list)
 
         return moves
+
+    def get_moves_of_color_capture_priority(self, is_white):
+        moves = []
+
+        for piece in self.piece_list:
+            if piece.is_white == is_white:
+                moves += piece.get_moves(self.piece_list)
+
+        for piece in self.piece_list:
+            if piece.is_white == is_white:
+                moves += piece.get_moves(self.piece_list)
