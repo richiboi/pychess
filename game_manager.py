@@ -3,6 +3,8 @@ Handles the drawing of pieces onto the screen and clicks.
 Should abstract away the board directly from the player.
 Doesn't handle AI Logic but will call the function for
 the AI to make a move given the board.
+
+TODO: UPDATE FUNCTIONALITY with the new board dict
 """
 
 from ai import get_ai_move
@@ -106,6 +108,7 @@ class GameManager():
         self.selected_piece = piece
 
         if piece:
-            self.selected_piece_moves = piece.get_moves(self.board.piece_list)
+            self.selected_piece_moves = piece.get_moves(
+                self.board, True)
         else:
             self.selected_piece_moves = []

@@ -93,8 +93,8 @@ class Piece():
 
     # Function to get back all the possible moves of this piece
     # TODO: Need to implement king filtering
-    def get_moves(self, piece_list):
-        return self.get_possible_moves(piece_list)
+    def get_moves(self, board, check_legality):
+        return self.get_possible_moves(board, check_legality)
 
 
 class Pawn(Piece):
@@ -107,7 +107,8 @@ class Pawn(Piece):
     # Can move two squares forward on its first turn
     # Otherwise, can only move one. Cannot capture in front.
     # Captures via diagonal up or down
-    def get_possible_moves(self, piece_list):
+    def get_possible_moves(self, board, check_legality):
+        piece_list = board.piece_list
         moves = []
         updown = -1 if self.is_white else 1  # Determines the direction based on color
 
@@ -139,8 +140,8 @@ class Rook(Piece):
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
-    def get_possible_moves(self, piece_list):
-        return self.get_possible_moves_linear(piece_list, True, False)
+    def get_possible_moves(self, board, check_legality):
+        return self.get_possible_moves_linear(board.piece_list, True, False)
 
 
 class Knight(Piece):
@@ -149,9 +150,9 @@ class Knight(Piece):
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
-    def get_possible_moves(self, piece_list):
-        return self.get_possible_moves_directional(piece_list, [(2, 1), (2, -1), (1, 2), (1, -2),
-                                                                (-1, 2), (-1, -2), (-2, 1), (-2, -1)])
+    def get_possible_moves(self, board, check_legality):
+        return self.get_possible_moves_directional(board.piece_list, [(2, 1), (2, -1), (1, 2), (1, -2),
+                                                                      (-1, 2), (-1, -2), (-2, 1), (-2, -1)])
 
 
 class Bishop(Piece):
@@ -160,8 +161,8 @@ class Bishop(Piece):
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
-    def get_possible_moves(self, piece_list):
-        return self.get_possible_moves_linear(piece_list, False, True)
+    def get_possible_moves(self, board, check_legality):
+        return self.get_possible_moves_linear(board.piece_list, False, True)
 
 
 class Queen(Piece):
@@ -170,8 +171,8 @@ class Queen(Piece):
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
-    def get_possible_moves(self, piece_list):
-        return self.get_possible_moves_linear(piece_list, True, True)
+    def get_possible_moves(self, board, check_legality):
+        return self.get_possible_moves_linear(board.piece_list, True, True)
 
 
 class King(Piece):
@@ -180,6 +181,53 @@ class King(Piece):
         super().__init__(pos, type, is_white)
 
     # Function returns a list of possible moves given a piece_list
-    def get_possible_moves(self, piece_list):
-        return self.get_possible_moves_directional(piece_list, [(1, 1), (1, 0), (1, -1), (0, 1),
-                                                                (0, -1), (-1, 1), (-1, 0), (-1, -1)])
+    def get_possible_moves(self, board, check_legality):
+        # Get 8 directional moves
+        moves = self.get_possible_moves_directional(board.piece_list, [(1, 1), (1, 0), (1, -1), (0, 1),
+                                                                       (0, -1), (-1, 1), (-1, 0), (-1, -1)])
+
+        # If not using king danger squares to check legality moves (if called
+        # by a king itself that wants to check for legality), then don't
+        # filter through moves
+        if not check_legality:
+            return moves
+
+        # Filter through all 8 moves - check with king danger squares
+        # Condition: if move dest on bitboard is a 0
+        king_danger_squares = generate_king_danger_squares(board, self)
+        moves = [
+            move for move in moves if not king_danger_squares.get(move.dest)]
+
+        return moves
+
+
+# Function returns a bit board of all king danger squares of a color
+def generate_king_danger_squares(board, king):
+    bitboard = BitBoard()
+
+    # Remove the current king for now
+    board.piece_list.remove(king)
+
+    moves = board.get_moves_of_color(not king.is_white, False)
+
+    for move in moves:
+        bitboard.set(move.dest, 1)
+
+    # Restore the king
+    board.piece_list.append(king)
+
+    return bitboard
+
+
+class BitBoard():
+    def __init__(self):
+        self.data = [0] * 64
+
+    def set(self, pos, val):
+        # Takes in a pos tuple (x, y) and a value to set (0 or 1)
+        x, y = pos
+        self.data[x + y * 8] = val
+
+    def get(self, pos):
+        x, y = pos
+        return self.data[x + y * 8]

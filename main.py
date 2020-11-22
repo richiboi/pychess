@@ -13,7 +13,7 @@ import pygame
 from game_manager import GameManager
 
 SQ_SIZE = 60
-CONFIG_FILE = "board_configs/standard.txt"
+CONFIG_FILE = "board_configs/super_simple.txt"
 
 # Initializing pygame stuff
 pygame.init()
