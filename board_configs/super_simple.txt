@@ -1,8 +1,8 @@
-xx xx xx xx xx bk xx xx
-xx xx xx br xx xx xx xx
+xx xx xx xx xx wk xx xx
+xx xx xx wr xx xx xx xx
 xx xx xx xx xx xx xx xx
 xx xx xx xx xx xx xx xx
 xx xx xx xx xx xx xx xx
 xx xx xx xx xx xx xx xx
-xx xx xx wk xx xx xx xx
+xx xx xx bk xx xx xx xx
 xx xx xx xx xx xx xx xx

@@ -24,7 +24,7 @@ class GameManager():
         self.sq_size = sq_size
         self.selected_piece = None
         self.is_white_turn = True
-        self.board = Board(sq_size, starter_config_file)
+        self.board = Board(starter_config_file)
 
         # Current move list keeps track of moves of selected piece
         self.selected_piece_moves = []
@@ -45,7 +45,7 @@ class GameManager():
     # Draws all the pieces onto the board
     def __draw_pieces(self):
         # Loop through all the pieces in the board
-        for piece in self.board.piece_list:
+        for piece in self.board:
             image = pygame.image.load(os.path.join(
                 '128h sprites', piece.type + '.png'))
 
@@ -80,7 +80,7 @@ class GameManager():
 
                     start = time.time()
                     ai_move = get_ai_move(
-                        self.board, not self.is_white_turn, 3)
+                        self.board, not self.is_white_turn, 4)
                     end = time.time()
                     print('----------------')
                     print(ai_move)
@@ -95,10 +95,9 @@ class GameManager():
             return
 
         # If another piece is selected and of same color, set it as the new selected piece
-        for piece in self.board.piece_list:
-            if piece.pos == square_clicked and piece.is_white == self.is_white_turn:
-                self.select_piece(piece)
-                return
+        if self.board[square_clicked] and self.board[square_clicked].is_white == self.is_white_turn:
+            self.select_piece(self.board[square_clicked])
+            return
 
         # Otherwise, just deselect
         self.select_piece(None)

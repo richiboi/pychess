@@ -17,14 +17,13 @@ class Piece():
 
     # Help with printing out the piece
     def __repr__(self):
-        color = 'white' if self.is_white else 'black'
-        return f'Type: {self.type}, Position: {self.pos}, color: {color}\n'
+        return f'{self.type} at {self.pos}'
 
     # This method gets linear possible squares. Useful for rook, queen, bishop
     # Takes in a list of all pieces on board, horzvert and diagonal are bools
     # indicating whether to search that direction
     # Returns a list of move objects
-    def get_possible_moves_linear(self, piece_list, horzvert, diagonal):
+    def get_possible_moves_linear(self, board, horzvert, diagonal):
         # Set up search_directions
         moves = []
         search_directions = []
@@ -34,60 +33,50 @@ class Piece():
         if diagonal:
             search_directions.extend([(1, 1), (1, -1), (-1, 1), (-1, -1)])
 
+        # Perform search for each direction
         for search_direction in search_directions:
             self.__search_till_blocked(
-                pos_add(self.pos, search_direction), search_direction, piece_list, moves)
+                pos_add(self.pos, search_direction), search_direction, board, moves)
 
         return moves
 
     # Recursive helper function for get_possible_moves_linear
     # Searches in one particular direction until a path is blocked
     # Adds to a list of move objects (passed in by reference)
-    def __search_till_blocked(self, curr_pos, search_direction, piece_list, moves):
+    def __search_till_blocked(self, curr_pos, search_direction, board, moves):
 
         # Base case 1: No longer in bound
         if not is_in_bounds(curr_pos):
             return
 
         # Base case 2: Another piece is reached
-        for piece in piece_list:
-            if curr_pos == piece.pos:
-                # If different color, append as a capture move
-                if piece.is_white != self.is_white:
-                    moves.append(Move(self, curr_pos, piece))
-                return
+        if board[curr_pos]:
+            # If different color, append as a capture move
+            if board[curr_pos].is_white != self.is_white:
+                moves.append(Move(self, curr_pos, board[curr_pos]))
+            return
 
         # Otherwise append this and call on the next position
         moves.append(Move(self, curr_pos))
         return self.__search_till_blocked(pos_add(curr_pos, search_direction),
-                                          search_direction, piece_list, moves)
+                                          search_direction, board, moves)
 
     # Used for single square directional movement. King and Knight.
     # Directions is a list of all possible directions (should be 8).
     # Returns a list of possible moves.
-    def get_possible_moves_directional(self, piece_list, directions):
+    def get_possible_moves_directional(self, board, directions):
         moves = []
 
-        squares_to_check = [pos_add(dir, self.pos) for dir in directions]
+        # List Comprehension! Only add if in bounds
+        squares_to_check = [pos_add(
+            dir, self.pos) for dir in directions if is_in_bounds(pos_add(dir, self.pos))]
 
-        for sq in squares_to_check:
-            # If square is not in bound, move on
-            if not is_in_bounds(sq):
-                continue
-
-            # Now check if there is existing piece of same color
-            # TODO: Replace with list comprehension
-            for piece in piece_list:
-                # If has existing piece
-                if sq == piece.pos:
-                    # If that piece same color, reject, otherwise add as capture
-                    if piece.is_white == self.is_white:
-                        break
-                    else:
-                        moves.append(Move(self, sq, piece))
-                        break
-            else:
-                moves.append(Move(self, sq))
+        for square in squares_to_check:
+            # If no piece there, add
+            if not board[square]:
+                moves.append(Move(self, square))
+            elif board[square].is_white != self.is_white:
+                moves.append(Move(self, square, board[square]))  # Capture
 
         return moves
 
@@ -108,28 +97,24 @@ class Pawn(Piece):
     # Otherwise, can only move one. Cannot capture in front.
     # Captures via diagonal up or down
     def get_possible_moves(self, board, check_legality):
-        piece_list = board.piece_list
         moves = []
         updown = -1 if self.is_white else 1  # Determines the direction based on color
 
-        # Check for diagonal captures
-        for piece in piece_list:
-            if (piece.pos == pos_add(self.pos, (1, updown)) or piece.pos == pos_add(self.pos, (-1, updown))) and piece.is_white != self.is_white:
-                moves.append(Move(self, piece.pos, piece))  # Capture
+        # Check for diagonal captures - loop through left and right
+        for diagonal_sq in [pos_add(self.pos, (1, updown)), pos_add(self.pos, (-1, updown))]:
+            if is_in_bounds(diagonal_sq) and board[diagonal_sq] and board[diagonal_sq].is_white != self.is_white:
+                moves.append(
+                    Move(self, diagonal_sq, board[diagonal_sq]))  # Capture
 
-        sq_ahead_blocked = True
+        # If one ahead isn't blocked, then add one ahead.
+        # Then if two ahead isn't blocked and it's first turn, add it
+        one_ahead = pos_add(self.pos, (0, updown))
+        if not board[one_ahead]:
+            moves.append(Move(self, one_ahead))
 
-        # Check if square ahead is blocked. Matters for all turns
-        # If not, add square ahead to possible moves
-        # Doesn't matter what color it is, as it can't capture ahead
-        if not pos_add(self.pos, (0, updown)) in [piece.pos for piece in piece_list]:
-            sq_ahead_blocked = False
-            moves.append(Move(self, pos_add(self.pos, (0, updown))))
-
-        # If first move, and the first square wasn't blocked, check the second square
-        if not sq_ahead_blocked and self.first_move:
-            if not pos_add(self.pos, (0, updown * 2)) in [piece.pos for piece in piece_list]:
-                moves.append(Move(self, pos_add(self.pos, (0, updown * 2))))
+            two_ahead = pos_add(self.pos, (0, updown * 2))
+            if self.first_move and not board[two_ahead]:
+                moves.append(Move(self, two_ahead))
 
         return moves
 
@@ -139,9 +124,9 @@ class Rook(Piece):
         self.value = 500
         super().__init__(pos, type, is_white)
 
-    # Function returns a list of possible moves given a piece_list
+    # Function returns a list of possible moves given a board
     def get_possible_moves(self, board, check_legality):
-        return self.get_possible_moves_linear(board.piece_list, True, False)
+        return self.get_possible_moves_linear(board, True, False)
 
 
 class Knight(Piece):
@@ -149,10 +134,10 @@ class Knight(Piece):
         self.value = 320
         super().__init__(pos, type, is_white)
 
-    # Function returns a list of possible moves given a piece_list
+    # Function returns a list of possible moves given a board
     def get_possible_moves(self, board, check_legality):
-        return self.get_possible_moves_directional(board.piece_list, [(2, 1), (2, -1), (1, 2), (1, -2),
-                                                                      (-1, 2), (-1, -2), (-2, 1), (-2, -1)])
+        return self.get_possible_moves_directional(board, [(2, 1), (2, -1), (1, 2), (1, -2),
+                                                           (-1, 2), (-1, -2), (-2, 1), (-2, -1)])
 
 
 class Bishop(Piece):
@@ -160,9 +145,9 @@ class Bishop(Piece):
         self.value = 330
         super().__init__(pos, type, is_white)
 
-    # Function returns a list of possible moves given a piece_list
+    # Function returns a list of possible moves given a board
     def get_possible_moves(self, board, check_legality):
-        return self.get_possible_moves_linear(board.piece_list, False, True)
+        return self.get_possible_moves_linear(board, False, True)
 
 
 class Queen(Piece):
@@ -170,9 +155,9 @@ class Queen(Piece):
         self.value = 9
         super().__init__(pos, type, is_white)
 
-    # Function returns a list of possible moves given a piece_list
+    # Function returns a list of possible moves given a board
     def get_possible_moves(self, board, check_legality):
-        return self.get_possible_moves_linear(board.piece_list, True, True)
+        return self.get_possible_moves_linear(board, True, True)
 
 
 class King(Piece):
@@ -183,8 +168,8 @@ class King(Piece):
     # Function returns a list of possible moves given a piece_list
     def get_possible_moves(self, board, check_legality):
         # Get 8 directional moves
-        moves = self.get_possible_moves_directional(board.piece_list, [(1, 1), (1, 0), (1, -1), (0, 1),
-                                                                       (0, -1), (-1, 1), (-1, 0), (-1, -1)])
+        moves = self.get_possible_moves_directional(board, [(1, 1), (1, 0), (1, -1), (0, 1),
+                                                            (0, -1), (-1, 1), (-1, 0), (-1, -1)])
 
         # If not using king danger squares to check legality moves (if called
         # by a king itself that wants to check for legality), then don't
@@ -196,38 +181,38 @@ class King(Piece):
         # Condition: if move dest on bitboard is a 0
         king_danger_squares = generate_king_danger_squares(board, self)
         moves = [
-            move for move in moves if not king_danger_squares.get(move.dest)]
+            move for move in moves if not king_danger_squares[move.dest]]
 
         return moves
 
 
 # Function returns a bit board of all king danger squares of a color
 def generate_king_danger_squares(board, king):
-    bitboard = BitBoard()
+    king_danger_squares = BitBoard()
 
     # Remove the current king for now
-    board.piece_list.remove(king)
+    board.pop(king.pos)
 
     moves = board.get_moves_of_color(not king.is_white, False)
 
     for move in moves:
-        bitboard.set(move.dest, 1)
+        king_danger_squares[move.dest] = 1
 
     # Restore the king
-    board.piece_list.append(king)
+    board[king.pos] = king
 
-    return bitboard
+    return king_danger_squares
 
 
 class BitBoard():
     def __init__(self):
         self.data = [0] * 64
 
-    def set(self, pos, val):
-        # Takes in a pos tuple (x, y) and a value to set (0 or 1)
-        x, y = pos
-        self.data[x + y * 8] = val
-
-    def get(self, pos):
-        x, y = pos
+    def __getitem__(self, position):
+        x, y = position
         return self.data[x + y * 8]
+
+    def __setitem__(self, position, value):
+        # Takes in a pos tuple (x, y) and a value to set (0 or 1)
+        x, y = position
+        self.data[x + y * 8] = value

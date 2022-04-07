@@ -67,7 +67,7 @@ def __negamax(board, alpha, beta, is_white, depth, start_depth):
 # Returns an integer representing the value of the board
 def board_value(board, is_white):
     value = 0
-    for piece in board.piece_list:
+    for piece in board:
         multiplier = 1 if piece.is_white == is_white else -1
         value += piece.value * multiplier            # Add piece value
         # Add position value

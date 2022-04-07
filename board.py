@@ -8,18 +8,41 @@ Does not keep track of turn.
 """
 
 from piece import Pawn, Rook, Knight, Bishop, Queen, King
+from pos_funcs import is_in_bounds
 
 
 class Board():
-    def __init__(self, sq_size, config_file):
-        self.piece_list = []  # Stores as a list of pieces
-        self.pos_piece_dict = {}  # Stores as a map - pos tuple -> piece
+    def __init__(self, config_file):
+        # A dict -> key as position and value as the piece
+        self.pieces = {}
 
-        self.sq_size = sq_size
         self.setup_pieces(config_file)
+
+    def __check_pos_in_bounds(self, position):
+        if not is_in_bounds(position):
+            raise Exception(f'Position {position} not in bounds!')
+
+    def __getitem__(self, position):
+        self.__check_pos_in_bounds(position)
+        return self.pieces.get(position)
+
+    def __setitem__(self, position, piece):
+        self.__check_pos_in_bounds(position)
+        self.pieces[position] = piece
+
+    def __len__(self):
+        return len(self.pieces)
+
+    def __iter__(self):
+        return iter(self.pieces.values())
+
+    def pop(self, position):
+        self.__check_pos_in_bounds(position)
+        return self.pieces.pop(position, None)
 
     # Performs the initial setup of pieces from a txt config file
     # Edits the piece_list member variable
+
     def setup_pieces(self, config_file):
         with open(config_file) as file:
             data = file.read().split('\n')
@@ -38,41 +61,43 @@ class Board():
                         'q': Queen(*args),
                         'k': King(*args)
                     }
-                    # Add to list
-                    piece = piece_type_switcher[data[r][c][1]]
-                    self.piece_list.append(piece)
-
                     # Add to dict
-                    self.pos_piece_dict[(c, r)] = piece
+                    self[(c, r)] = piece_type_switcher[data[r][c][1]]
+
+    def __move_piece_to_position(self, origin, destination):
+        # Places the piece from the origin to the destination
+        self[destination] = self.pop(origin)
 
     def perform_move(self, move):
-        # Function to perform a move. Updates the board's piecelist and dict
+        # Function to perform a move
 
         # Set piece's first move to false
         move.piece.first_move = False
 
         # If there is capture, perform it
         if move.capture:
-            self.piece_list.remove(move.capture)
-            self.pos_piece_dict.pop(move.piece.pos)
+            self.pop(move.dest)
 
         # Move the piece in question
+        self.__move_piece_to_position(move.piece.pos, move.dest)
         move.piece.pos = move.dest
 
     def undo_move(self, move_state):
         # Takes in a move_state object, of which it restores the state to
+        self.__move_piece_to_position(
+            move_state.move.piece.pos, move_state.pos)
         move_state.move.piece.pos = move_state.pos
         move_state.move.piece.first_move = move_state.first_move
 
+        # If captured, add it back
         if move_state.move.capture:
-            self.piece_list.append(move_state.move.capture)
-            self.pos_piece_dict[move_state.pos] = move_state.move.piece
+            self[move_state.move.capture.pos] = move_state.move.capture
 
     # Returns the move list for all pieces
     def get_moves(self, check_legality=True):
         moves = []
 
-        for piece in self.piece_list:
+        for piece in self:
             moves += piece.get_moves(self, check_legality)
 
         return moves
@@ -81,7 +106,8 @@ class Board():
     def get_moves_of_color(self, is_white, check_legality=True):
         moves = []
 
-        for piece in self.piece_list:
+        # TODO: Remove this list(self) type conversion for efficiency
+        for piece in list(self):
             if piece.is_white == is_white:
                 moves += piece.get_moves(self, check_legality)
 
@@ -91,13 +117,11 @@ class Board():
         # Consider if a piece is at the king location
         # Generate all moves for that piece, if there is another piece there,
         # then king is in check
-        king = [piece for piece in self.piece_list if piece.type[1]
+        king = [piece for piece in self if piece.type[1]
                 == 'k' and piece.is_white == is_white][0]
 
-        # Create a dictionary that maps positions to pieces without kings
-        pos_piece_dict = self.create_pos_piece_dict(is_white)
-
         # Consider pawns
+        updown = -1 if sis_white else 1  # Determines the direction based on color
 
         # Consider knight
 
@@ -107,12 +131,15 @@ class Board():
 
         return 0
 
-    def search_till_blocked(self):
+    def search_line_till_blocked(self):
+        # Recursively searches in a given direction until blocked
+        # Returns the piece object blocking
         pass
-
 
 # Class that stores the state of a move before
 # a move is performed
+
+
 class MoveState():
 
     def __init__(self, move):
